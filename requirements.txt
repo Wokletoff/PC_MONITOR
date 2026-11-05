@@ -1,0 +1,6 @@
+PySide6
+psutil
+pywin32
+nvidia-ml-py
+pythonnet   # опционально, для LibreHardwareMonitor
+pyinstaller   # только для сборки exe (build.py)

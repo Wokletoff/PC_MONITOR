@@ -1,0 +1,35 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# ---------- Сборка exe (build.py / PyInstaller) ----------
+build/
+dist/
+*.spec
+# иконка генерируется build.py из кода
+icon.ico
+
+# ---------- Данные пользователя ----------
+# личные настройки, создаются при первом «Применить»
+config.json
+# диагностика
+monitor.log
+monitor-settings*.json
+
+# ---------- Сторонние программы (скачиваются отдельно, см. README) ----------
+PresentMon*.exe
+tools/
+PawnIO*.exe
+lhm/
+*.dll
+
+# ---------- Редакторы и ОС ----------
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store
