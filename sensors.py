@@ -31,6 +31,31 @@ VENDORS = {0x10DE: "NVIDIA", 0x1002: "AMD", 0x8086: "Intel"}
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 
+def unblock_downloaded():
+    """Снимает с файлов отметку «скачано из интернета» (поток Zone.Identifier).
+    Если архив распаковали, не разблокировав, .NET отказывается загружать DLL —
+    и LibreHardwareMonitor падает с «Failed to resolve Python.Runtime.Loader.Initialize»."""
+    import sys
+    roots = [APP_DIR / "lhm"]
+    if getattr(sys, "frozen", False):
+        internal = APP_DIR / "_internal"
+        roots += [internal / "pythonnet", internal / "clr_loader"]
+    if LHM_DLL is not None:
+        roots.append(LHM_DLL.parent)
+    fixed = 0
+    for root in roots:
+        if not root.exists():
+            continue
+        files = [root] if root.is_file() else [p for p in root.rglob("*") if p.is_file()]
+        for f in files:
+            try:
+                os.remove(f"{f}:Zone.Identifier")
+                fixed += 1
+            except OSError:
+                pass  # отметки нет — это нормально
+    return fixed
+
+
 def is_admin():
     try:
         return bool(ctypes.windll.shell32.IsUserAnAdmin())
@@ -611,7 +636,12 @@ class SensorHub(threading.Thread):
         nvml = self._try(NvmlReader, "NVML") if any(g["vendor"] == "NVIDIA" for g in self.gpus) else None
         lhm = None
         if LHM_DLL is not None and is_admin():
+            unblock_downloaded()
             lhm = self._try(lambda: LhmReader(LHM_DLL), "LibreHardwareMonitor")
+            if lhm is None and any("Failed to resolve" in n or "remote" in n.lower() for n in self.notes):
+                self.note("Подсказка: Windows заблокировала DLL как скачанные из интернета. Закройте программу, "
+                          "выполните в её папке PowerShell-команду «Get-ChildItem -Recurse | Unblock-File» "
+                          "и запустите снова. Если не поможет — установите .NET Framework 4.8")
         self.lhm = lhm
         psutil.cpu_percent(None)
         lh, lh_time = {"cpu": {}, "gpu": {}}, 0.0
